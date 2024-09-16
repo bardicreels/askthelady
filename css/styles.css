@@ -30,6 +30,13 @@ header {
     max-width: 400px;
 }
 
+.chat-image {
+    border-radius: 10px;
+    overflow: hidden;
+    max-width: 100%;
+    height: auto;
+}
+
 ul {
     list-style-type: none; /* Remove bullets */
     padding: 0; /* Remove padding */
