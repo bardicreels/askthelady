@@ -77,10 +77,10 @@ function shakeElement(element) {
 
 
 
-function getYoutubeLink(filename, timestampz) {
+function getYoutubeLink(filename, timestamp) {
     const videoId = filename.split('-').pop().split('.')[0];
-    const [minutes, seconds] = timestamp.split(':');
-    const totalSeconds = parseInt(minutes) * 60 + parseInt(seconds);
+    const [hours, minutes, seconds] = timestamp.split(':').map(Number);
+    const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
     return `https://www.youtube.com/watch?v=${videoId}&t=${totalSeconds}s`;
 }
 
@@ -114,8 +114,8 @@ function displayResults(results) {
 
 function getTimestampSeconds(timestamp) {
     const [start] = timestamp.split(' --> ');
-    const [minutes, seconds] = start.split(':');
-    return parseInt(minutes) * 60 + parseInt(seconds);
+    const [hours, minutes, seconds] = start.split(':').map(Number);
+    return Math.floor((hours * 3600) + (minutes * 60) + seconds);
 }
 
 function getStartTimecode(timestamp) {
@@ -317,3 +317,32 @@ modalImg.onclick = function() {
         console.log('No URL found in alt text'); // Debug log
     }
 }
+
+// Example of how you might set up event listeners and search functionality:
+document.addEventListener('DOMContentLoaded', () => {
+    const searchForm = document.getElementById('search-form');
+    const searchInput = document.getElementById('search-input');
+
+    searchForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const query = searchInput.value.trim();
+        if (query) {
+            try {
+                const results = await performSearch(query);
+                displayResults(results);
+            } catch (error) {
+                console.error('Error performing search:', error);
+                displayResults([]);
+            }
+        }
+    });
+});
+
+// This function would need to be implemented to actually perform the search
+async function performSearch(query) {
+    // Implement your search logic here
+    // This might involve fetching data from a server or searching through local data
+    // Return an array of results in the format expected by displayResults
+}
+
+// Add any other necessary functions or logic here

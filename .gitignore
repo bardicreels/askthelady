@@ -1,11 +1,7 @@
-docs/.prompts.md
-long_mem.md
-node_modules/
-*.log
-.DS_Store
-images/.temp
-js/server.js
-test.html
+.gitignore
 .vscode
-venv
-.prompts.md
+data
+docs
+images
+js/server.js
+python
