@@ -4,6 +4,8 @@ docs
 images
 js/server.js
 python
+python/
 venv
+venv/
 .env
 
