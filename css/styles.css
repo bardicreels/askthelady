@@ -469,3 +469,31 @@ main {
 .claims-section .interactive-element {
     margin: 10px auto;
 }
+
+/* VTT List Styles */
+#vtt-files {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+#vtt-files li {
+    margin-bottom: 8px;
+}
+
+#vtt-files a {
+    color: inherit;
+    text-decoration: none;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+#vtt-files a:hover {
+    text-decoration: underline;
+}
+
+/* Style for the date span */
+#vtt-files .vtt-date {
+    font-size: 14px;
+    color: #666;
+    margin-left: 5px;
+}
