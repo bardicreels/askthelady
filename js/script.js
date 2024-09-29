@@ -150,17 +150,27 @@ function populateVTTList() {
         return;
     }
 
-    const vttItems = Object.values(vttData).map(fileData => `
+    const vttItems = Object.values(vttData).map(fileData => {
+        // Extract date from filename (assuming format: YYYY-MM-DD-title-videoId.vtt)
+        const datePart = fileData.name.split('-').slice(0, 3).join('-');
+        const date = new Date(datePart);
+        
+        // Check if the date is valid
+        const formattedDate = !isNaN(date.getTime()) 
+            ? ` <span class="vtt-date">(${date.toLocaleDateString('en-GB')})</span>` 
+            : '';
+
+        return `
         <li>
             <label>
                 <input type="checkbox" class="vtt-checkbox" data-filename="${fileData.name}" 
                     ${getCookie(fileData.name) === 'true' ? 'checked' : ''}>
                 <a href="${fileData.url}" target="_blank">
-                    ${fileData.name}
+                    ${fileData.name}${formattedDate}
                 </a>
             </label>
         </li>
-    `);
+    `});
     vttList.innerHTML = vttItems.join('');
 
     // Add event listeners to checkboxes
