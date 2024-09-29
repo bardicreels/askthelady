@@ -1,0 +1,21 @@
+# Site settings
+title: Your Site Title
+description: Your site description
+
+# Build settings
+markdown: kramdown
+exclude:
+  - python
+  - venv
+  - .gitignore
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+
+# Plugin settings
+plugins:
+  - jekyll-seo-tag
+
+# GitHub Pages settings
+github:
+  is_project_page: true
