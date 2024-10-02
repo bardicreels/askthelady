@@ -202,6 +202,10 @@ async function initialize() {
     await loadVTTData();
     initializeSearch();
     populateVTTList();
+    
+    // Perform initial search for "christ"
+    const initialResults = searchVTTContent("christ");
+    displayResults(initialResults);
 }
 
 // Run the initialize function when the DOM is fully loaded
