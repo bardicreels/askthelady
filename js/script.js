@@ -84,14 +84,14 @@ function getYoutubeLink(filename, timestamp) {
     return `https://www.youtube.com/watch?v=${videoId}&t=${totalSeconds}s`;
 }
 
-function displayResults(results) {
+function displayResults(results, keyword) {
     const resultsDiv = document.getElementById('results');
     if (!resultsDiv) {
         console.error('Results div not found');
         return;
     }
     if (results.length === 0) {
-        resultsDiv.innerHTML = '<p>No results found.</p>';
+        resultsDiv.innerHTML = `<p>No results found for "${keyword}".</p>`;
     } else {
         const resultHtml = results.map((result, index) => `
             <div class="video-result" style="animation: fadeIn 0.5s ease-out ${index * 0.1}s both;">
@@ -108,7 +108,7 @@ function displayResults(results) {
                 </ul>
             </div>
         `).join('');
-        resultsDiv.innerHTML = `<h2>Search Results:</h2>${resultHtml}`;
+        resultsDiv.innerHTML = `<h2>Search Results for "${keyword}":</h2>${resultHtml}`;
     }
 }
 
@@ -138,7 +138,7 @@ function initializeSearch() {
         const keyword = searchInput.value.trim();
         if (keyword) {
             const results = searchVTTContent(keyword);
-            displayResults(results);
+            displayResults(results, keyword);
         }
     });
 }
@@ -204,8 +204,9 @@ async function initialize() {
     populateVTTList();
     
     // Perform initial search for "christ"
-    const initialResults = searchVTTContent("christ");
-    displayResults(initialResults);
+    const initialKeyword = "christ";
+    const initialResults = searchVTTContent(initialKeyword);
+    displayResults(initialResults, initialKeyword);
 }
 
 // Run the initialize function when the DOM is fully loaded
