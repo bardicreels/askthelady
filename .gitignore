@@ -8,4 +8,9 @@ python/
 venv
 venv/
 .env
-
+*.epub
+*.pdf
+*.mobi
+*.azw3
+*.docx
+OUTLINE.md
