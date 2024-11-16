@@ -1,4 +1,3 @@
-.gitignore
 .vscode
 docs
 images
@@ -14,3 +13,4 @@ venv/
 *.azw3
 *.docx
 OUTLINE.md
+books/
