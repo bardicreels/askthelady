@@ -13,3 +13,4 @@ venv/
 *.docx
 OUTLINE.md
 books/
+update.py
