@@ -1,29 +1,5 @@
-let vttData = [];
 let deferredPrompt; // Used for PWA installation
-
-async function loadVTTData() {
-    try {
-        const response = await fetch('combined_vtt');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const text = await response.text();
-        vttData = parseVttContent(text);
-        console.log('VTT data loaded successfully');
-    } catch (error) {
-        console.error('Error loading VTT data:', error);
-        // Initialize with empty data to avoid crashes
-        vttData = [];
-        // Show user-friendly message in results area
-        const resultsDiv = document.getElementById('results');
-        if (resultsDiv) {
-            resultsDiv.innerHTML = `
-                <p>Unable to load video data. The share link functionality is still available for any 
-                existing search results.</p>
-            `;
-        }
-    }
-}
+let cachedVttList = []; // Store video list for populating the sidebar
 
 // Add a button to unregister service worker
 document.addEventListener('DOMContentLoaded', () => {
@@ -45,37 +21,53 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function searchVTTContent(keyword) {
-    const results = [];
-    for (const episode of vttData) {
-        const matches = episode.segments.filter(segment => 
-            segment.text.toLowerCase().includes(keyword.toLowerCase())
-        );
-        if (matches.length > 0) {
-            // Extract YouTube ID from filename (last part after the last period)
-            const parts = episode.filename.split('.');
-            const youtubeId = parts[parts.length - 1];
-            
-            // Clean up the display name - remove underscore and YouTube ID
-            let displayName = episode.filename;
-            // Remove YouTube ID (everything after the last period)
-            displayName = displayName.substring(0, displayName.lastIndexOf('.'));
-            // Replace underscores with spaces
-            displayName = displayName.replace(/_/g, ' ');
-            
-            results.push({ 
-                filename: episode.filename, 
-                name: displayName, 
-                url: `https://www.youtube.com/watch?v=${youtubeId}`, 
-                matches: matches.map(segment => ({
-                    timestamp: segment.timecode,
-                    text: segment.text,
-                    keyword: keyword // Store the keyword for highlighting
-                }))
-            });
+async function searchVTTContent(keyword) {
+    try {
+        // Use the new server-side endpoint
+        const response = await fetch(`/api/search-transcripts?query=${encodeURIComponent(keyword)}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const results = await response.json();
+        return results;
+    } catch (error) {
+        console.error('Error searching VTT content:', error);
+        
+        // Show user-friendly message in results area
+        const resultsDiv = document.getElementById('results');
+        if (resultsDiv) {
+            resultsDiv.innerHTML = `
+                <p>Unable to search video data. Please try again later.</p>
+            `;
+        }
+        
+        return [];
     }
-    return results;
+}
+
+// Function to fetch the list of videos for the sidebar
+async function fetchVideoList() {
+    try {
+        // This is a lightweight request to get just the video list
+        // You could create a separate endpoint for this if needed
+        const response = await fetch('/api/search-transcripts?query=VIDEOLIST_ONLY');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.map(item => ({
+            filename: item.filename,
+            name: item.name,
+            url: item.url
+        }));
+    } catch (error) {
+        console.error('Error fetching video list:', error);
+        return [];
+    }
 }
 
 function shakeElement(element) {
@@ -271,11 +263,18 @@ function initializeSearch() {
 
     searchInput.placeholder = "Search video History";
 
-    searchForm.addEventListener('submit', (e) => {
+    searchForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const keyword = searchInput.value.trim();
         if (keyword) {
-            const results = searchVTTContent(keyword);
+            // Show loading indicator
+            const resultsDiv = document.getElementById('results');
+            if (resultsDiv) {
+                resultsDiv.innerHTML = `<p>Searching for "${keyword}"...</p>`;
+            }
+            
+            // Perform the search using the server-side endpoint
+            const results = await searchVTTContent(keyword);
             displayResults(results, keyword);
         }
     });
@@ -288,22 +287,15 @@ function populateVTTList() {
         return;
     }
 
-    const vttItems = vttData.map(episode => {
+    if (!cachedVttList || cachedVttList.length === 0) {
+        vttList.innerHTML = '<li>No videos available</li>';
+        return;
+    }
+
+    const vttItems = cachedVttList.map(video => {
         // Extract date from filename (assuming format: YYYY-MM-DD-title-videoId)
-        const datePart = episode.filename.split('-').slice(0, 3).join('-');
+        const datePart = video.filename.split('-').slice(0, 3).join('-');
         const date = new Date(datePart);
-        
-        // Extract YouTube ID from filename
-        const parts = episode.filename.split('.');
-        const youtubeId = parts[parts.length - 1];
-        const url = `https://www.youtube.com/watch?v=${youtubeId}`;
-        
-        // Clean up the display name - remove underscore and YouTube ID
-        let displayName = episode.filename;
-        // Remove YouTube ID (everything after the last period)
-        displayName = displayName.substring(0, displayName.lastIndexOf('.'));
-        // Replace underscores with spaces
-        displayName = displayName.replace(/_/g, ' ');
         
         // Check if the date is valid
         const formattedDate = !isNaN(date.getTime()) 
@@ -313,14 +305,15 @@ function populateVTTList() {
         return `
         <li>
             <label>
-                <input type="checkbox" class="vtt-checkbox" data-filename="${episode.filename}" 
-                    ${getCookie(episode.filename) === 'true' ? 'checked' : ''}>
-                <a href="${url}" target="_blank">
-                    ${displayName}${formattedDate}
+                <input type="checkbox" class="vtt-checkbox" data-filename="${video.filename}" 
+                    ${getCookie(video.filename) === 'true' ? 'checked' : ''}>
+                <a href="${video.url}" target="_blank">
+                    ${video.name}${formattedDate}
                 </a>
             </label>
         </li>
     `});
+    
     vttList.innerHTML = vttItems.join('');
 
     // Add event listeners to checkboxes
@@ -349,14 +342,26 @@ function getCookie(name) {
 }
 
 async function initialize() {
-    await loadVTTData();
     initializeSearch();
-    populateVTTList();
     
-    // Perform initial search for "christ"
-    const initialKeyword = "christ";
-    const initialResults = searchVTTContent(initialKeyword);
-    displayResults(initialResults, initialKeyword);
+    try {
+        // Fetch video list for sidebar
+        cachedVttList = await fetchVideoList();
+        populateVTTList();
+        
+        // Perform initial search for "christ"
+        const initialKeyword = "christ";
+        const initialResults = await searchVTTContent(initialKeyword);
+        displayResults(initialResults, initialKeyword);
+    } catch (error) {
+        console.error('Error during initialization:', error);
+        const resultsDiv = document.getElementById('results');
+        if (resultsDiv) {
+            resultsDiv.innerHTML = `
+                <p>Unable to load video data. Please try again later.</p>
+            `;
+        }
+    }
 }
 
 // Run the initialize function when the DOM is fully loaded
